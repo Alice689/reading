@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>如梦令-常记溪亭日暮 朗读游戏</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #poem {
+      font-size: 1.5em;
+      margin: 20px 0;
+      line-height: 1.6;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      margin: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    #result,
+    #status {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+
+    #audioPlayback {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>如梦令-常记溪亭日暮</h1>
+  <p id="poem">常记溪亭日暮，<br>沉醉不知归路。<br>兴尽晚回舟，<br>误入藕花深处。<br>争渡，争渡，<br>惊起一滩鸥鹭。</p>
+  <button id="startRecording">开始录音</button>
+  <button id="stopRecording" disabled>停止录音</button>
+  <div id="status"></div>
+  <div id="result"></div>
+  <div id="audioPlayback"></div>
+  <script>
+    const poem = "常记溪亭日暮，沉醉不知归路。兴尽晚回舟，误入藕花深处。争渡，争渡，惊起一滩鸥鹭。";
+    let mediaRecorder;
+    let audioChunks = [];
+    const startRecordingButton = document.getElementById('startRecording');
+    const stopRecordingButton = document.getElementById('stopRecording');
+    const statusDiv = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+    const audioPlaybackDiv = document.getElementById('audioPlayback');
+
+    function updateStatus(message) {
+      statusDiv.textContent = message;
+    }
+
+    function startRecording() {
+      audioChunks = [];
+      mediaRecorder.start();
+      updateStatus('录音中...');
+      startRecordingButton.disabled = true;
+      stopRecordingButton.disabled = false;
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      updateStatus('录音已停止，正在处理...');
+      startRecordingButton.disabled = false;
+      stopRecordingButton.disabled = true;
+    }
+    // 检查浏览器是否支持必要的 API
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      updateStatus('您的浏览器不支持录音功能。请尝试使用最新版本的 Chrome、Firefox 或 Safari。');
+    } else {
+      navigator.mediaDevices.getUserMedia({
+          audio: true
+        })
+        .then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+          };
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, {
+              type: 'audio/wav'
+            });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            // 创建音频播放元素
+            const audio = document.createElement('audio');
+            audio.src = audioUrl;
+            audio.controls = true;
+            audioPlaybackDiv.innerHTML = '';
+            audioPlaybackDiv.appendChild(audio);
+            // 模拟评分结果
+            const score = Math.floor(Math.random() * 101);
+            resultDiv.innerHTML = `评分：${score} 分<br>加油！继续努力！`;
+            updateStatus('录音已完成，您可以播放并查看评分结果。');
+          };
+          startRecordingButton.addEventListener('click', startRecording);
+          stopRecordingButton.addEventListener('click', stopRecording);
+          updateStatus('麦克风已就绪，请点击"开始录音"按钮。');
+        })
+        .catch(err => {
+          console.error('无法获取麦克风权限:', err);
+          updateStatus('无法获取麦克风权限，请检查浏览器设置并确保您已允许网页访问麦克风。');
+        });
+    }
+  </script>
+</body>
+
+</html>
